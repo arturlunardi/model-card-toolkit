@@ -34,6 +34,26 @@ _COLOR_PALETTE = {
     'material_purple_500': '#A142F4'  # quantitative analysis
 }
 
+dict_bins = {
+    0: 'Overall',
+    1: '0 - 5',
+    2: '5 - 10',
+    3: '10 - 15',
+    4: '15 - 20',
+    5: '20 - 30',
+    6: '30 - 40',
+    7: '40 - 50',
+    8: '50 - 75',
+    9: '75 - 100',
+    10: '100 - 125',
+    11: '125 - 150',
+    12: '150 - 200',
+    13: '200 - 250',
+    14: '250 - 500',
+    15: '500 - 1000',
+    16: '1000+'}
+reversed_dict_bins = {v: k for k, v in dict_bins.items()}
+
 
 @attr.s(auto_attribs=True)
 class _Graph():
@@ -180,9 +200,14 @@ def _extract_graph_data_from_dataset_feature_statistics(
 
   if feature_stats.HasField('string_stats'):
     rank_histogram = feature_stats.string_stats.rank_histogram
-    graph.x = [int(bucket.sample_count) for bucket in rank_histogram.buckets]
+    if feature_name == 'bin_tamanho_sinal':
+        ordered_values = sorted(rank_histogram.buckets, key=lambda x: reversed_dict_bins[x.label])
+        graph.x = [int(bucket.sample_count) for bucket in ordered_values]
+        graph.y = [bucket.label for bucket in ordered_values]
+    else:
+        graph.x = [int(bucket.sample_count) for bucket in rank_histogram.buckets]
+        graph.y = [bucket.label for bucket in rank_histogram.buckets]
     graph.xlabel = 'counts'
-    graph.y = [bucket.label for bucket in rank_histogram.buckets]
     graph.ylabel = 'buckets'
     graph.title = f'counts | {feature_name}' if feature_name else 'counts'
     graph.name = f'counts | {feature_name}' if feature_name else 'counts'
@@ -258,6 +283,19 @@ def _extract_graph_data_from_slicing_metrics(
       logging.warning('%s must be a doubleValue or boundedValue; skipping %s.',
                       metric, slices_key)
       return None
+
+  if slices_key == 'bin_tamanho_sinal':
+      sorted_dict_metric_values = dict(
+          sorted(
+              dict(
+                  zip(slice_values, metric_values)
+              ).items(), key=lambda x: reversed_dict_bins.get(x[0])
+          )
+      )
+
+      metric_values = list(sorted_dict_metric_values.values())
+      slice_values = list(sorted_dict_metric_values.keys())
+
 
   graph = _Graph()
   graph.x = metric_values

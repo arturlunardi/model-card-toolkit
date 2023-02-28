@@ -79,7 +79,10 @@ def annotate_dataset_feature_statistics_plots(
       for feature in dataset.features:
         graph = _extract_graph_data_from_dataset_feature_statistics(
             feature, color)
-        graph = _draw_histogram(graph)
+        try:
+          graph = _draw_histogram(graph)
+        except ValueError:
+          graph = None
         if graph is not None:
           graphs.append(
               model_card_module.Graphic(
@@ -122,7 +125,10 @@ def annotate_eval_result_plots(model_card: model_card_module.ModelCard,
     for slices_key in slices_keys:
       graph = _extract_graph_data_from_slicing_metrics(
           eval_result.slicing_metrics, metric, slices_key)
-      graph = _draw_histogram(graph)
+      try:
+        graph = _draw_histogram(graph)
+      except ValueError:
+        graph = None
       if graph is not None:
         graphs.append(graph)
 
